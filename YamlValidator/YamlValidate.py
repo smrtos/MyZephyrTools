@@ -1,6 +1,12 @@
+"""
+A script to automate the YAML file validation.
+By ming.shao@intel.com
+"""
+import argparse
 import os
 import sys
 import subprocess
+import time
 
 import ruamel.yaml
 import json
@@ -8,6 +14,20 @@ import json
 import jsonschema
 import cerberus
 import pykwalify
+
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-T", dest="rootDir", action="store", help="the root where to scan for YAMLs.")
+    parser.add_argument("-s", dest="schemaFile", action="store", help="the full path of the pykwalify YAML schema file.")
+    options = parser.parse_args()
+    if options.rootDir is None or options.schemaFile is None:
+        parser.print_help()
+        sys.exit(0)
+    return options
 
 
 def GetYamlFiles(rootDir):
@@ -44,23 +64,30 @@ def YamlValidate(yamlFiles, schemaFile):
         print(f"\rValid YAMLs: {validYamlCount}, InvalidYAMLs: {invalidYamlCount}", end="")            
     return invalidYamls
 
+def main():
+    start_time = time.time()
+    options = parse_arguments()
+    rootDir = options.rootDir
+    schemaFile = options.schemaFile
+    print("\n")
+    print(f"rootDir: {rootDir}")
+    print(f"schema: {schemaFile}")     
+    yamls = GetYamlFiles(rootDir)
+    print(f"Total YAMLs: {len(yamls)}")
+    invlaidYamls = YamlValidate(yamls, schemaFile)
+    print("\n")
+    print(f"rootDir: {rootDir}")
+    print(f"schema: {schemaFile}")
+    print("Invalid YAMLs:")
+    for invalidYaml in invlaidYamls:
+        print(invalidYaml)
+    duration = time.time() - start_time
+    print(f"Completed in {duration} seconds")
+    pass
 
 if __name__ == "__main__":
-   rootDir = sys.argv[1]
-   schema = os.path.normpath(sys.argv[2])
-   print("\n")
-   print(f"rootDir: {rootDir}")
-   print(f"schema: {schema}")   
-   yamls = GetYamlFiles(rootDir)
-   print(f"Total YAMLs: {len(yamls)}")
-   invlaidYamls = YamlValidate(yamls, schema)
-   print("\n")
-   print(f"rootDir: {rootDir}")
-   print(f"schema: {schema}")
-   print("Invalid YAMLs:")
-   for invalidYaml in invlaidYamls:
-       print(invalidYaml)
-   pass
+    main()
+    pass
 
 
 
